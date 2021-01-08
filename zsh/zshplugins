@@ -1,0 +1,3 @@
+zplugin load zsh-users/zsh-syntax-highlightin
+zplugin load zsh-users/zsh-autosuggestions
+zplugin load changyuheng/zsh-interactive-cd
