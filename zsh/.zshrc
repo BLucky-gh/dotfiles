@@ -21,6 +21,7 @@ COMPLETION_WAITING_DOTS="true"
 plugins=(git)
 
 source $ZSH/oh-my-zsh.sh
+source $HOME/.cargo/env
 
 # User configuration
 
