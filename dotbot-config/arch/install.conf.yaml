@@ -1,0 +1,12 @@
+sudo:
+  - shell:
+    - [pacman -Syu, Updating system]
+    - 
+      command: git clone https://aur.archlinux.org/paru.git /tmp/paru && cd /tmp/paru && makepkg -si
+      description: Cloning paru
+  - paru:
+    - zsh
+    - chromium
+    - neovim
+    - neofetch
+    - fzf

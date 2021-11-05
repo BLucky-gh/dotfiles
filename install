@@ -2,14 +2,28 @@
 
 set -e
 
-CONFIG="install.conf.yaml"
+source /etc/os-release
+
+CFG_FILE="install.conf.yaml"
 DOTBOT_DIR="dotbot"
+DOTBOT_PLUGINS="${BASEDIR}/dotbot-plugins"
 
 DOTBOT_BIN="bin/dotbot"
 BASEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEFAULT_CFG_DIR="${BASEDIR}/dotbot-config"
 
 cd "${BASEDIR}"
 git -C "${DOTBOT_DIR}" submodule sync --quiet --recursive
 git submodule update --init --recursive "${DOTBOT_DIR}"
 
-"${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" -d "${BASEDIR}" -c "${CONFIG}" "${@}"
+if [[ $ID == "debian" ]] || [[ $ID_LIKE == "debian" ]]; then
+	PLATFORM_CFG_DIR="${DEFAULT_CFG_DIR}/debian"
+elif [[ $ID == "arch" ]] || [[ $ID_LIKE == "arch" ]]; then
+	PLATFORM_CFG_DIR="${DEFAULT_CFG_DIR}/arch"
+fi
+
+for dir in ${DEFAULT_CFG_DIR} ${PLATFORM_CFG_DIR}; do
+    "${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" -d "${BASEDIR}/${dir}" -c "${dir}/${CFG_FILE}" --plugin-dir "${BASEDIR}/.plugins"
+done
+
+

@@ -1,6 +1,0 @@
-- apt:
-  - zsh
-  - chromium
-  - neovim
-  - neofetch
-  - fzf

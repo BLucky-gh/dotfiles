@@ -6,12 +6,11 @@
 
 - link:
     ~/.config/zsh/.zshenv: ~/.zshenv
-    ~/.vim: vim
-    ~/.vimrc: vimrc
 
 - create:
     - ~/downloads
-    - ~/.vim/undo-history
-
+    - ~/documents
+    - ~/git
 - shell:
+  - [git submodule sync --recursive, Syncing submodules]
   - [git submodule update --init --recursive, Installing submodules]
