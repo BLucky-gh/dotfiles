@@ -1,2 +1,7 @@
+rustup/downloads/
+rustup/tmp/
+rustup/toolchains/
+rustup/update-hashes/
+cargo/
 TabNine/*
 *.pyc
