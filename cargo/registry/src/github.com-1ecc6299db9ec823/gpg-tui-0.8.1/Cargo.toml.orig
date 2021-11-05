@@ -1,0 +1,80 @@
+[package]
+name = "gpg-tui"
+version = "0.8.1"
+description = "Manage your GnuPG keys with ease!"
+authors = ["Orhun Parmaksız <orhunparmaksiz@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+documentation = "https://docs.rs/gpg-tui"
+homepage = "https://github.com/orhun/gpg-tui"
+repository = "https://github.com/orhun/gpg-tui"
+keywords = ["gnupg", "gpg", "tui", "key", "management"]
+categories = ["command-line-utilities"]
+include = ["src/**/*", "assets/*", "Cargo.*", "LICENSE", "README.md", "CHANGELOG.md"]
+edition = "2018"
+default-run = "gpg-tui"
+
+[[bin]]
+name = "gpg-tui-completions"
+path = "src/bin/completions.rs"
+test = false
+
+[features]
+tui-tests = []
+gpg-tests = []
+
+[dependencies]
+gpgme = "0.10.0"
+crossterm = "0.21.0"
+anyhow = "1.0.44"
+chrono = "0.4.19"
+unicode-width = "0.1.9"
+copypasta-ext = "0.3.7"
+colorsys = "0.6.4"
+rust-embed = "6.2.0"
+shellexpand = "2.1.0"
+hex-literal = "0.3.3"
+toml = "0.5.8"
+dirs-next = "2.0.0"
+
+[dependencies.structopt]
+version = "0.3.23"
+default-features = false
+features = ["suggestions", "color", "wrap_help"]
+
+[dependencies.tui]
+version = "0.16.0"
+default-features = false
+features = ["crossterm"]
+
+[dependencies.image]
+version = "0.23.14"
+default-features = false
+features = ["jpeg"]
+
+[dependencies.serde]
+version = "1.0.28"
+features = ["derive"]
+
+[dev-dependencies]
+pretty_assertions = "1.0.0"
+
+[profile.dev]
+opt-level = 0
+debug = true
+panic = "abort"
+
+[profile.test]
+opt-level = 0
+debug = true
+
+[profile.release]
+opt-level = 3
+debug = false
+panic = "abort"
+lto = true
+codegen-units = 1
+
+[profile.bench]
+opt-level = 3
+debug = false

@@ -1,0 +1,44 @@
+[package]
+name = "fluent-bundle"
+description = """
+A localization system designed to unleash the entire expressive power of
+natural language translations.
+"""
+version = "0.12.0"
+edition = "2018"
+authors = [
+    "Zibi Braniecki <gandalf@mozilla.com>",
+    "Staś Małolepszy <stas@mozilla.com>"
+]
+homepage = "http://www.projectfluent.org"
+license = "Apache-2.0/MIT"
+repository = "https://github.com/projectfluent/fluent-rs"
+readme = "README.md"
+keywords = ["localization", "l10n", "i18n", "intl", "internationalization"]
+categories = ["localization", "internationalization"]
+include = [
+	"src/**/*",
+	"benches/*.rs",
+	"Cargo.toml",
+	"README.md"
+]
+
+[dependencies]
+fluent-langneg = "0.13"
+fluent-syntax = { version = "0.9", path = "../fluent-syntax" }
+intl_pluralrules = "7.0"
+rental = "0.5"
+smallvec = "1.0"
+unic-langid = "0.9"
+intl-memoizer = { version = "0.5", path = "../intl-memoizer" }
+
+[dev-dependencies]
+criterion = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.8"
+rand = "0.7"
+unic-langid = { version = "0.9", features = ["macros"] }
+
+[[bench]]
+name = "resolver"
+harness = false

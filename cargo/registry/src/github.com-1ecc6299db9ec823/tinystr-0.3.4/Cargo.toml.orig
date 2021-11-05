@@ -1,0 +1,38 @@
+[package]
+name = "tinystr"
+description = """
+A small ASCII-only bounded length string representation.
+"""
+version = "0.3.4"
+authors = ["Raph Levien <raph.levien@gmail.com>", "Zibi Braniecki <zibi@braniecki.net>"]
+edition = "2018"
+license = "Apache-2.0/MIT"
+repository = "https://github.com/zbraniecki/tinystr"
+readme = "README.md"
+keywords = ["string", "str", "small", "tiny", "no_std"]
+categories = ["data-structures"]
+
+[dependencies]
+tinystr-macros = { version = "0.1", path = "./macros", optional = true }
+
+[dev-dependencies]
+criterion = "0.3"
+
+[features]
+default = [ "std" ] # Default to using the std
+
+# Use the standard library. Enables TinyStrAuto.
+std = []
+
+# Use the `alloc` crate. Enables TinyStrAuto. This feature does nothing if std is enabled.
+alloc = []
+
+macros = ["tinystr-macros"]
+
+[[bench]]
+name = "construct"
+harness = false
+
+[[bench]]
+name = "tinystr"
+harness = false

@@ -1,0 +1,5 @@
+let g:netrw_dirhistmax  =10
+let g:netrw_dirhistcnt =3
+let g:netrw_dirhist_3='/home/blucky/.config/zsh/.zplugin'
+let g:netrw_dirhist_2='/home/askold/.config/zsh'
+let g:netrw_dirhist_1='/home/askold/.config/zsh/.zprezto'

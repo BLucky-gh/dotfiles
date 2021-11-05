@@ -1,0 +1,9 @@
+[general]
+  splash = false
+  tick_rate = 250
+  color = "928374"
+  style = "colored"
+  file_explorer = "xplr"
+
+[gpg]
+  armor = true

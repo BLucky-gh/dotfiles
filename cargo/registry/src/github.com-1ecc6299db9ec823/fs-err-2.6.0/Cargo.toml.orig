@@ -1,0 +1,17 @@
+[package]
+name = "fs-err"
+description = "A drop-in replacement for std::fs with more helpful error messages."
+version = "2.6.0"
+authors = ["Andrew Hickman <andrew.hickman1@sky.com>"]
+edition = "2018"
+repository = "https://github.com/andrewhickman/fs-err"
+documentation = "https://docs.rs/fs-err"
+categories = ["command-line-interface", "filesystem"]
+license = "MIT/Apache-2.0"
+readme = "README.md"
+
+[dependencies]
+
+[dev-dependencies]
+version-sync = "0.9.2"
+serde_json = "1.0.64"

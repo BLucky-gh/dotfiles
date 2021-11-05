@@ -1,0 +1,76 @@
+[package]
+name = "fern"
+# Remember to update html_root_url in src/lib.rs with each version.
+version = "0.6.0"
+authors = ["David Ross <daboross@daboross.net>"]
+description = "Simple, efficient logging"
+edition = "2018"
+
+documentation = "https://docs.rs/fern/"
+repository = "https://github.com/daboross/fern"
+readme = "README.md"
+
+license = "MIT"
+keywords = ["log", "logging", "logger"]
+categories = ["development-tools::debugging"]
+
+include = ["Cargo.toml", "src/**/*", "tests/**/*", "examples/**/*", "LICENSE", "README.md", "CONTRIBUTING.md", "CHANGELOG.md"]
+
+[badges]
+travis-ci = { repository = "daboross/fern" }
+appveyor = { repository = "daboross/fern" }
+coveralls = { repository = "daboross/fern" }
+is-it-maintained-issue-resolution-time = { repository = "daboross/fern" }
+maintenance = { status = "passively-maintained" }
+
+[dependencies]
+log = { version = "0.4", features = ["std"] }
+colored = { version = "1.5", optional = true }
+chrono = { version = "0.4", optional = true }
+
+[target."cfg(not(windows))".dependencies]
+syslog3 = { version = "3", package = "syslog", optional = true }
+syslog4 = { version = "4", package = "syslog", optional = true }
+reopen = { version = "^0.3", optional = true }
+libc = { version = "0.2.58", optional = true }
+
+[features]
+syslog-3 = ["syslog3"]
+syslog-4 = ["syslog4"]
+reopen-03 = ["reopen", "libc"]
+meta-logging-in-format = []
+date-based = ["chrono"]
+
+[dev-dependencies]
+tempdir = "0.3"
+clap = "2.22"
+chrono = "0.4"
+
+[[example]]
+name = "cmd-program"
+
+[[example]]
+name = "date-based-file-log"
+required-features = ["date-based"]
+
+[[example]]
+name = "colored"
+required-features = ["colored"]
+
+[[example]]
+name = "pretty-colored"
+required-features = ["colored"]
+
+[[example]]
+name = "syslog"
+required-features = ["syslog-4"]
+
+[[example]]
+name = "syslog3"
+required-features = ["syslog-3"]
+
+[[example]]
+name = "meta-logging"
+
+[package.metadata.docs.rs]
+all-features = true

@@ -1,0 +1,26 @@
+[package]
+name = "gpgme-sys"
+version = "0.10.0"
+edition = "2018"
+license = "LGPL-2.1"
+repository = "https://github.com/gpg-rs/gpgme/gpgme-sys"
+documentation = "https://docs.rs/gpgme-sys"
+categories = ["external-ffi-bindings"]
+keywords = ["gpg", "gpgme", "crypto", "cryptography"]
+description = "Raw bindings for gpgme"
+links = "gpgme"
+build = "build.rs"
+
+[badges]
+maintenance = { status = "experimental" }
+
+[lib]
+name = "gpgme_sys"
+path = "lib.rs"
+
+[dependencies]
+libc = "0.2"
+libgpg-error-sys = "0.5.1"
+
+[target.'cfg(windows)'.build-dependencies]
+winreg = "0.9"

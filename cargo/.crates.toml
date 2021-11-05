@@ -1,0 +1,8 @@
+[v1]
+"bat 0.18.3 (registry+https://github.com/rust-lang/crates.io-index)" = ["bat"]
+"bottom 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)" = ["btm"]
+"cargo-update 8.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = ["cargo-install-update", "cargo-install-update-config"]
+"gpg-tui 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)" = ["gpg-tui", "gpg-tui-completions"]
+"ouch 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = ["ouch"]
+"tealdeer 1.4.1 (registry+https://github.com/rust-lang/crates.io-index)" = ["tldr"]
+"topgrade 8.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = ["topgrade"]

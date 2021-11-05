@@ -1,0 +1,67 @@
+version: 8.0.0-{build}
+
+skip_tags: false
+
+platform: x64
+configuration: Release
+
+clone_folder: C:\cargo-update
+
+install:
+  - set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;%PATH%;C:\Users\appveyor\.cargo\bin
+  # https://www.msys2.org/news/#2020-05-17-32-bit-msys2-no-longer-actively-supported
+  - curl -SL http://repo.msys2.org/msys/x86_64/msys2-keyring-r21.b39fb11-1-any.pkg.tar.xz -oC:\msys2-keyring.txz
+  - curl -SL http://repo.msys2.org/msys/x86_64/msys2-keyring-1~20210904-1-any.pkg.tar.zst -oC:\msys2-keyring.tzst
+  - curl -SL http://repo.msys2.org/msys/x86_64/zstd-1.4.4-2-x86_64.pkg.tar.xz -oC:\zstd.txz
+  - curl -SL http://repo.msys2.org/msys/x86_64/pacman-5.2.2-5-x86_64.pkg.tar.xz -oC:\pacman.txz
+  - pacman --noconfirm -U C:\msys2-keyring.txz
+  - pacman --noconfirm -U C:\zstd.txz
+  - pacman --noconfirm -U C:\pacman.txz
+  - pacman --noconfirm -U C:\msys2-keyring.tzst
+  - bash -lc "pacman --needed --noconfirm -Sy pacman-mirrors"
+  - bash -lc "pacman --noconfirm -Sy pacman"
+  - bash -lc "pacman --noconfirm -Sy"
+  - bash -lc "pacman --noconfirm -Su"
+  - bash -lc "pacman --noconfirm -Sy"
+  - bash -lc "pacman --noconfirm -S mingw-w64-x86_64-toolchain zip"
+  -
+  # Fix undefined references to __acrt_iob_func()
+  - sed -rie "s/#define std([[:alpha:]]+)[[:space:]]+\(__acrt_iob_func\(([[:digit:]]+)\)\)/#define std\1 (\&__iob_func()[\2])/" "C:\msys64\mingw64\x86_64-w64-mingw32\include\stdio.h"
+  # Fix undefined references to __imp__difftime64()
+  - sed -rie "s/_CRTIMP (double __cdecl _difftime64)/\1/" "C:\msys64\mingw64\x86_64-w64-mingw32\include\time.h"
+  -
+  - mkdir target\release\deps
+  - cp C:\Windows\System32\ntdll.dll target\release\deps
+  -
+  - curl -SL https://win.rustup.rs/ -oC:\rustup-init.exe
+  - C:\rustup-init.exe -y --default-host="x86_64-pc-windows-gnu"
+
+build: off
+build_script:
+  - cargo build --verbose --release
+  -
+  - mkdir cargo-update-v8.0.0
+  - cp target\release\cargo-install-update.exe target\release\cargo-install-update-config.exe cargo-update-v8.0.0\
+  - strip --strip-all --remove-section=.comment --remove-section=.note cargo-update-v8.0.0/cargo-install-update.exe cargo-update-v8.0.0/cargo-install-update-config.exe
+  - zip -9r cargo-update-v8.0.0.zip cargo-update-v8.0.0
+
+test: off
+test_script:
+  - cargo test --verbose --release
+
+artifacts:
+  - path: cargo-update-v8.0.0.zip
+
+deploy:
+  provider: GitHub
+  artifact: cargo-update-v8.0.0.zip
+  auth_token:
+    secure: 8dP4MwLtHqrSNKYKeSGSt8vm/QIc+0LHdSoI2ReFPAWEL9VrU8+88YcjQNcF6Wzn
+  on:
+    appveyor_repo_tag: true
+
+notifications:
+  - provider: Email
+    to:
+      - nabijaczleweli@gmail.com
+    on_build_status_changed: true

@@ -1,0 +1,405 @@
+# How we deploy a release.  Covers binary builds.  Also manages packaging for winget, choco, and homebrew.
+#
+# Based on https://github.com/BurntSushi/ripgrep/blob/master/.github/workflows/release.yml
+
+name: deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Which tag to deploy as:"
+        required: true
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  create-github-release:
+    name: create-github-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create artifacts directory
+        run: mkdir artifacts
+
+      - name: Get the release version from the tag
+        if: env.VERSION == ''
+        run: |
+          if [[ -n "${{ github.event.inputs.tag }}" ]]; then
+            echo "Manual run against a tag; overriding actual tag in the environment..."
+            echo "VERSION=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
+          else
+            echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          fi
+
+      - name: Validate version environment variable
+        run: |
+          echo "Version being built against is version ${{ env.VERSION }}"!
+
+      - name: Create GitHub release
+        id: release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          draft: true
+          tag_name: ${{ env.VERSION }}
+          release_name: ${{ env.VERSION }} Release
+
+      - name: Save release upload URL to artifact
+        run: echo "${{ steps.release.outputs.upload_url }}" > artifacts/release-upload-url
+
+      - name: Save version number to artifact
+        run: echo "${{ env.VERSION }}" > artifacts/release-version
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: artifacts
+          path: artifacts
+
+  build-release:
+    name: build-release
+    needs: [create-github-release]
+    runs-on: ${{ matrix.triple.os }}
+    container: ${{ matrix.triple.container }}
+    env:
+      RUST_BACKTRACE: 1
+    strategy:
+      fail-fast: false
+      matrix:
+        triple:
+          # Standard x86-64 stuff, stable
+          - {
+              os: "ubuntu-18.04",
+              target: "x86_64-unknown-linux-gnu",
+              cross: false,
+              artifact: true,
+              strip: true,
+            }
+          - {
+              os: "ubuntu-18.04",
+              target: "x86_64-unknown-linux-gnu",
+              cross: false,
+              container: quay.io/pypa/manylinux2014_x86_64,
+              suffix: "2-17",
+              strip: true,
+            }
+          - {
+              os: "ubuntu-18.04",
+              target: "i686-unknown-linux-gnu",
+              cross: true,
+              strip: true,
+            }
+          - {
+              os: "ubuntu-18.04",
+              target: "x86_64-unknown-linux-musl",
+              cross: false,
+              artifact: true,
+              strip: true,
+            }
+          - {
+              os: "ubuntu-18.04",
+              target: "i686-unknown-linux-musl",
+              cross: true,
+              strip: true,
+            }
+          - {
+              os: "macOS-latest",
+              target: "x86_64-apple-darwin",
+              cross: false,
+              artifact: true,
+              strip: true,
+            }
+          - {
+              os: "windows-2019",
+              target: "x86_64-pc-windows-msvc",
+              cross: false,
+              artifact: true,
+            }
+          - {
+              os: "windows-2019",
+              target: "i686-pc-windows-msvc",
+              cross: false,
+              artifact: true,
+            }
+          - {
+              os: "windows-2019",
+              target: "x86_64-pc-windows-gnu",
+              cross: false,
+            }
+
+          # aarch64
+          - {
+              os: "ubuntu-18.04",
+              target: "aarch64-unknown-linux-gnu",
+              cross: true,
+              artifact: true,
+            }
+
+          # armv7
+          - {
+              os: "ubuntu-18.04",
+              target: "armv7-unknown-linux-gnueabihf",
+              cross: true,
+              artifact: true,
+            }
+
+          # PowerPC 64 LE
+          - {
+              os: "ubuntu-18.04",
+              target: "powerpc64le-unknown-linux-gnu",
+              cross: true,
+            }
+
+          # Risc-V 64gc
+          - {
+              os: "ubuntu-18.04",
+              target: "riscv64gc-unknown-linux-gnu",
+              cross: true,
+            }
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v2
+
+      - name: Get release download URL
+        uses: actions/download-artifact@v2
+        with:
+          name: artifacts
+          path: artifacts
+
+      - name: Set release upload URL and release version
+        shell: bash
+        run: |
+          release_upload_url="$(cat ./artifacts/release-upload-url)"
+          echo "RELEASE_UPLOAD_URL=$release_upload_url" >> $GITHUB_ENV
+          release_version="$(cat ./artifacts/release-version)"
+          echo "RELEASE_VERSION=$release_version" >> $GITHUB_ENV
+
+      - name: Validate release environment variables
+        run: |
+          echo "Release upload url: ${{ env.RELEASE_UPLOAD_URL }}"
+          echo "Release version: ${{ env.RELEASE_VERSION }}"
+
+      - name: Install Net-Framework-Core (Windows x86-64 MSVC)
+        if: matrix.triple.target == 'x86_64-pc-windows-msvc'
+        shell: powershell
+        run: Install-WindowsFeature Net-Framework-Core
+
+      - name: Install wixtoolset (Windows x86-64 MSVC)
+        if: matrix.triple.target == 'x86_64-pc-windows-msvc'
+        uses: crazy-max/ghaction-chocolatey@v1.4.0
+        with:
+          args: install -y wixtoolset
+
+      # - name: Export wixtoolset to path (Windows x86-64 MSVC)
+      #   if: matrix.triple.target == 'x86_64-pc-windows-msvc'
+      #   shell: powershell
+      #   run: export PATH=${PATH}:"/c/Program Files (x86)/WiX Toolset v3.11/bin"
+
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          target: ${{ matrix.triple.target }}
+
+      - uses: Swatinem/rust-cache@v1
+        with:
+          key: ${{ matrix.triple.target }}
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --verbose --target=${{ matrix.triple.target }} --features "battery"
+          use-cross: ${{ matrix.triple.cross }}
+
+      - name: Move autocomplete to working directory
+        shell: bash
+        run: |
+          mkdir completion
+          cp -r ./target/${{ matrix.triple.target }}/release/build/bottom-*/out/. completion
+
+      - name: Strip release binary (macOS or Linux x86-64/i686)
+        if: matrix.triple.strip == true
+        run: |
+          strip target/${{ matrix.triple.target }}/release/btm
+
+      # TODO: Strip ARM
+
+      - name: Bundle release and completion (Windows)
+        if: matrix.triple.os == 'windows-2019'
+        shell: bash
+        run: |
+          cp target/${{ matrix.triple.target }}/release/btm.exe btm.exe
+          7z a bottom_${{ matrix.triple.target }}.zip "btm.exe"
+          7z a bottom_${{ matrix.triple.target }}.zip "completion"
+          echo "ASSET=bottom_${{ matrix.triple.target }}.zip" >> $GITHUB_ENV
+
+      - name: Bundle release and completion (Linux and macOS)
+        if: matrix.triple.os != 'windows-2019'
+        shell: bash
+        run: |
+          cp target/${{ matrix.triple.target }}/release/btm ./btm
+          tar -czvf bottom_${{ matrix.triple.target }}${{ matrix.triple.suffix }}.tar.gz btm completion
+          echo "ASSET=bottom_${{ matrix.triple.target }}${{ matrix.triple.suffix }}.tar.gz" >> $GITHUB_ENV
+
+      - name: Upload main release
+        uses: actions/upload-release-asset@v1.0.1
+        id: upload
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ env.RELEASE_UPLOAD_URL }}
+          asset_path: ${{ env.ASSET }}
+          asset_name: ${{ env.ASSET }}
+          asset_content_type: application/octet-stream
+
+      - name: Add download asset to artifact if required
+        if: matrix.triple.artifact == true
+        run: cp ${{ env.ASSET }} artifacts/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: artifacts
+          path: artifacts
+
+      - name: Build msi file (Windows x86-64 MSVC)
+        if: matrix.triple.target == 'x86_64-pc-windows-msvc'
+        shell: powershell
+        run: |
+          cargo install cargo-wix --version 0.3.1 --locked
+          cargo wix init
+          cargo wix
+
+      - name: Upload msi file (Windows x86-64 MSVC)
+        if: matrix.triple.target == 'x86_64-pc-windows-msvc'
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ env.RELEASE_UPLOAD_URL }}
+          asset_path: bottom_x86_64_installer.msi
+          asset_name: bottom_x86_64_installer.msi
+          asset_content_type: application/octet-stream
+
+      - name: Build winget (Windows x86-64 MSVC)
+        if: matrix.triple.target == 'x86_64-pc-windows-msvc'
+        run: |
+          python "./deployment/packager.py" ${{ env.RELEASE_VERSION }} "./deployment/windows/winget/winget.yaml.template" "Clement.bottom.yaml" "SHA256" "./bottom_x86_64_installer.msi"
+          $Code = powershell ./deployment/windows/winget/get_product_code.ps1 ./bottom_x86_64_installer.msi
+          python "./deployment/windows/winget/product_code.py" Clement.bottom.yaml $Code
+
+      - name: Upload winget file (Windows x86-64 MSVC)
+        if: matrix.triple.target == 'x86_64-pc-windows-msvc'
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ env.RELEASE_UPLOAD_URL }}
+          asset_path: Clement.bottom.yaml
+          asset_name: Clement.bottom.yaml
+          asset_content_type: application/octet-stream
+
+      - name: Build Debian release (Linux x86-64 GNU)
+        if: matrix.triple.target == 'x86_64-unknown-linux-gnu' && matrix.triple.container == ''
+        run: |
+          cargo install cargo-deb --version 1.29.0 --locked
+          cargo deb
+          cp ./target/debian/bottom_*.deb ./bottom_${{ env.RELEASE_VERSION }}_amd64.deb
+
+      - name: Upload Debian file (Linux x86-64 GNU)
+        if: matrix.triple.target == 'x86_64-unknown-linux-gnu' && matrix.triple.container == ''
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ env.RELEASE_UPLOAD_URL }}
+          asset_path: bottom_${{ env.RELEASE_VERSION }}_amd64.deb
+          asset_name: bottom_${{ env.RELEASE_VERSION }}_amd64.deb
+          asset_content_type: application/octet-stream
+
+  additional-file-generation:
+    needs: [build-release]
+    name: additional-file-generation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v2
+
+      - name: Get release download URL
+        uses: actions/download-artifact@v2
+        with:
+          name: artifacts
+          path: artifacts
+
+      - name: Set release upload URL, download URL and version
+        shell: bash
+        run: |
+          release_upload_url="$(cat ./artifacts/release-upload-url)"
+          echo "RELEASE_UPLOAD_URL=$release_upload_url" >> $GITHUB_ENV
+          release_version="$(cat ./artifacts/release-version)"
+          echo "RELEASE_VERSION=$release_version" >> $GITHUB_ENV
+
+      - name: Validate release environment variables
+        run: |
+          echo "Release upload url: ${{ env.RELEASE_UPLOAD_URL }}"
+          echo "Release version: ${{ env.RELEASE_VERSION }}"
+
+      - name: Execute choco packaging script
+        run: |
+          python "./deployment/windows/choco/choco_packager.py" "./artifacts/bottom_i686-pc-windows-msvc.zip" "./artifacts/bottom_x86_64-pc-windows-msvc.zip" ${{ env.RELEASE_VERSION }} "./deployment/windows/choco/bottom.nuspec.template" "./deployment/windows/choco/chocolateyinstall.ps1.template" "bottom.nuspec" "tools/chocolateyinstall.ps1" "tools/"
+          zip -r choco.zip "bottom.nuspec" "tools"
+
+      - name: Upload choco.zip to release
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ env.RELEASE_UPLOAD_URL }}
+          asset_path: choco.zip
+          asset_name: choco.zip
+          asset_content_type: application/octet-stream
+
+      - name: Execute Homebrew packaging script
+        run: |
+          python "./deployment/packager.py" ${{ env.RELEASE_VERSION }} "./deployment/macos/homebrew/bottom.rb.template" "./bottom.rb" "SHA256" "./artifacts/bottom_x86_64-apple-darwin.tar.gz" "./artifacts/bottom_x86_64-unknown-linux-musl.tar.gz";
+
+      - name: Upload bottom.rb to release
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ env.RELEASE_UPLOAD_URL }}
+          asset_path: bottom.rb
+          asset_name: bottom.rb
+          asset_content_type: application/octet-stream
+
+      - name: Compress completion files (Linux x86-64 GNU)
+        if: matrix.triple.target == 'x86_64-unknown-linux-gnu' && matrix.triple.container == ''
+        shell: bash
+        run: |
+          tar -C ./completion -czvf completion.tar.gz .
+
+      - name: Release completion files (Linux x86-64 GNU)
+        if: matrix.triple.target == 'x86_64-unknown-linux-gnu' && matrix.triple.container == ''
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ env.RELEASE_UPLOAD_URL }}
+          asset_path: completion.tar.gz
+          asset_name: completion.tar.gz
+          asset_content_type: application/octet-stream

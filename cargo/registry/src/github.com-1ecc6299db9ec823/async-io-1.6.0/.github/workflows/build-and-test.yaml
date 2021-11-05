@@ -1,0 +1,61 @@
+name: Build and test
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  build_and_test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        rust: [nightly, beta, stable]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Rust
+        # --no-self-update is necessary because the windows environment cannot self-update rustup.exe.
+        run: rustup update ${{ matrix.rust }} --no-self-update && rustup default ${{ matrix.rust }}
+      - run: cargo build --all --all-features --all-targets
+      - name: Run cargo check (without dev-dependencies to catch missing feature flags)
+        if: startsWith(matrix.rust, 'nightly')
+        run: cargo check -Z features=dev_dep
+      - run: cargo test
+
+  # Copied from: https://github.com/rust-lang/stacker/pull/19/files
+  windows_gnu:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        rust: [nightly]
+        target:
+          - x86_64-pc-windows-gnu
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install Rust
+        # --no-self-update is necessary because the windows environment cannot self-update rustup.exe.
+        run: rustup update ${{ matrix.rust }} --no-self-update && rustup default ${{ matrix.rust }}
+      - run: rustup target add ${{ matrix.target }}
+      # https://github.com/rust-lang/rust/issues/49078
+      - name: Fix windows-gnu rust-mingw
+        run : |
+          for i in crt2.o dllcrt2.o libmingwex.a libmsvcrt.a ; do
+            cp -f "/C/ProgramData/Chocolatey/lib/mingw/tools/install/mingw64/x86_64-w64-mingw32/lib/$i" "`rustc --print sysroot`/lib/rustlib/x86_64-pc-windows-gnu/lib"
+          done
+        shell: bash
+      - run: cargo build --target ${{ matrix.target }} --all --all-features --all-targets
+      - run: cargo test --target ${{ matrix.target }}
+
+  msrv:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: [1.46.0]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Rust
+        run: rustup update ${{ matrix.rust }} && rustup default ${{ matrix.rust }}
+      - run: cargo build
