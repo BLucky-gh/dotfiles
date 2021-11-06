@@ -24,7 +24,7 @@ elif [[ $ID == "arch" ]] || [[ $ID_LIKE == "arch" ]]; then
 fi
 
 for dir in ${DEFAULT_CFG_DIR} ${PLATFORM_CFG_DIR} ${FINAL_CFG_DIR}; do
-    "${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" -d "${BASEDIR}/${dir}" -c "${dir}/${CFG_FILE}" --plugin-dir "${BASEDIR}/.plugins"
+    "${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" -d "${dir}" -c "${dir}/${CFG_FILE}" --plugin-dir "${BASEDIR}/.plugins"
 done
 
 
