@@ -11,6 +11,7 @@ DOTBOT_PLUGINS="${BASEDIR}/dotbot-plugins"
 DOTBOT_BIN="bin/dotbot"
 BASEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEFAULT_CFG_DIR="${BASEDIR}/dotbot-config"
+FINAL_CFG_DIR="${DEFAULT_CFG_DIR}/final_common"
 
 cd "${BASEDIR}"
 git -C "${DOTBOT_DIR}" submodule sync --quiet --recursive
@@ -22,7 +23,7 @@ elif [[ $ID == "arch" ]] || [[ $ID_LIKE == "arch" ]]; then
 	PLATFORM_CFG_DIR="${DEFAULT_CFG_DIR}/arch"
 fi
 
-for dir in ${DEFAULT_CFG_DIR} ${PLATFORM_CFG_DIR}; do
+for dir in ${DEFAULT_CFG_DIR} ${PLATFORM_CFG_DIR} ${FINAL_CFG_DIR}; do
     "${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" -d "${BASEDIR}/${dir}" -c "${dir}/${CFG_FILE}" --plugin-dir "${BASEDIR}/.plugins"
 done
 
