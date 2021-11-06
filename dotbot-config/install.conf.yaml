@@ -1,11 +1,4 @@
-- defaults:
-    link:
-      relink: true
-
 - clean: ['~']
-
-- link:
-    ~/.config/zsh/.zshenv: ~/.zshenv
 
 - create:
     - ~/downloads
