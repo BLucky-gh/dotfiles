@@ -1,4 +1,4 @@
-sudo:
+- sudo:
   - shell:
     - [pacman -Syu, Updating system]
     - 

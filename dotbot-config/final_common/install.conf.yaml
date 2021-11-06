@@ -1,7 +1,7 @@
-link:
-    ~/.config/zsh/.zshenv: ~/.zshenv
+- link:
+  - ~/.config/zsh/.zshenv: ~/.zshenv
 
-shell:
+- shell:
   - [chsh -s $(which zsh), Making zsh the default shell] 
   - 
     command: gh auth login
