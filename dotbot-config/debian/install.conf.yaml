@@ -1,6 +1,9 @@
 sudo:
+  - shell:
+    - [./dotbot-config/debian/gh.sh, adding the gh repo to apt]
   - apt:
     - zsh
+    - gh
     - chromium
     - neovim
     - neofetch

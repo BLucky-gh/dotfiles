@@ -1,2 +1,8 @@
 shell:
   - [chsh -s $(which zsh), Making zsh the default shell] 
+  - 
+    command: gh auth login
+    stdin: true
+    stdout: true
+    stderr: true
+  - ["git remote set-url origin git@github.com:BLucky-gh/dotfiles.git", switching to ssh urls]

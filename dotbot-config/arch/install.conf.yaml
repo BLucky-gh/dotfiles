@@ -6,6 +6,7 @@ sudo:
       description: Cloning paru
   - paru:
     - zsh
+    - github-cli-git
     - chromium
     - neovim
     - neofetch
