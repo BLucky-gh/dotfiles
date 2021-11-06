@@ -23,7 +23,7 @@ elif [[ $ID == "arch" ]] || [[ $ID_LIKE == "arch" ]]; then
 	PLATFORM_CFG_DIR="${DEFAULT_CFG_DIR}/arch"
 fi
 
-paths = ( ${DEFAULT_CFG_DIR} ${PLATFORM_CFG_DIR} ${FINAL_CFG_DIR} )
+paths=( ${DEFAULT_CFG_DIR} ${PLATFORM_CFG_DIR} ${FINAL_CFG_DIR} )
 
 for dir in paths
 do
